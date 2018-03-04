@@ -3,7 +3,7 @@
  *
  * This crate provides an interface for rust code to read values passed in C's va_list type.
  *
- * ## Example 
+ * ## Example
  * In C Code
  * ```c
  * #include <stdint.h>
@@ -21,7 +21,7 @@
  * In rust code:
  * ```rust
  * extern crate va_list;
- * 
+ *
  * #[no_mangle]
  * extern "C" fn print_ints_va(count: u32, mut args: va_list::VaList)
  * {
@@ -44,7 +44,7 @@ mod std {
 }
 
 // x86_64 on unix platforms is _usually_ ELF.
-#[cfg(all( target_arch="x86_64", any(target_family="unix", target_os="tifflin") ))]
+#[cfg(all( target_arch="x86_64", any(target_family="unix", target_os="redox", target_os="tifflin") ))]
 #[path="impl-x86_64-elf.rs"] mod imp;
 
 //// x86_64 on windows is special
@@ -82,4 +82,3 @@ pub trait VaPrimitive: 'static
 	#[doc(hidden)]
 	unsafe fn get(&mut imp::VaList) -> Self;
 }
-
