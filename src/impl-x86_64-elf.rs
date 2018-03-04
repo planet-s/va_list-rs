@@ -1,6 +1,6 @@
 // x86_64 ELF - Aka the Itanium ABI
 //
-use std::{mem,ptr};
+use std::{mem, ptr};
 use super::VaPrimitive;
 
 pub struct VaList(*mut VaListInner);
@@ -10,28 +10,26 @@ pub struct VaList(*mut VaListInner);
 #[repr(C)]
 #[derive(Debug)]
 #[doc(hidden)]
-pub struct VaListInner
-{
-	gp_offset: u32,
-	fp_offset: u32,
-	overflow_arg_area: *const (),
-	reg_save_area: *const (),
+pub struct VaListInner {
+    gp_offset: u32,
+    fp_offset: u32,
+    overflow_arg_area: *const (),
+    reg_save_area: *const (),
 }
 
-impl VaList
-{
-	fn inner(&mut self) -> &mut VaListInner {
-		// This pointer should be valid
-		unsafe { &mut *self.0 }
-	}
+impl VaList {
+    fn inner(&mut self) -> &mut VaListInner {
+        // This pointer should be valid
+        unsafe { &mut *self.0 }
+    }
 }
 
 #[doc(hidden)]
-impl VaListInner
-{
+impl VaListInner {
 	fn check_space(&self, num_gp: u32, num_fp: u32) -> bool {
 		!(self.gp_offset > 48 - num_gp * 8 || self.fp_offset > 304 - num_fp * 16)
 	}
+
 	unsafe fn get_gp<T>(&mut self) -> T {
 		let n_gp = (mem::size_of::<T>()+7)/8;
 		assert!( self.check_space(n_gp as u32, 0) );
@@ -39,6 +37,7 @@ impl VaListInner
 		self.gp_offset += (8*n_gp) as u32;
 		rv
 	}
+
 	unsafe fn get_fp<T>(&mut self) -> T {
 		let n_fp = (mem::size_of::<T>()+15)/16;
 		assert!( self.check_space(0, n_fp as u32) );
@@ -46,6 +45,7 @@ impl VaListInner
 		self.fp_offset += (16*n_fp) as u32;
 		rv
 	}
+
 	unsafe fn get_overflow<T>(&mut self) -> T {
 		let align = mem::align_of::<T>();
 		// 7. Align overflow_reg_area upwards to a 16-byte boundary if alignment
@@ -68,33 +68,31 @@ impl VaListInner
 	}
 }
 
-impl<T: 'static> VaPrimitive for *const T
-{
-	unsafe fn get(list: &mut VaList) -> Self {
-		<usize>::get(list) as *const T
-	}
+impl<T: 'static> VaPrimitive for *const T {
+    unsafe fn get(list: &mut VaList) -> Self {
+        <usize>::get(list) as *const T
+    }
 }
 
 macro_rules! impl_va_prim {
-	($u:ty, $s:ty) => {
-		impl VaPrimitive for $u {
-			unsafe fn get(list: &mut VaList) -> Self {
-				let inner = list.inner();
-				// See the ELF AMD64 ABI document for a description of how this should act
-				if ! inner.check_space(1, 0) {
-					inner.get_overflow()
-				}
-				else {
-					inner.get_gp()
-				}
-			}
-		}
-		impl VaPrimitive for $s {
-			unsafe fn get(list: &mut VaList) -> Self {
-				mem::transmute( <$u>::get(list) )
-			}
-		}
-	};
+    ($u: ty, $s: ty) => {
+        impl VaPrimitive for $u {
+            unsafe fn get(list: &mut VaList) -> Self {
+                let inner = list.inner();
+                // See the ELF AMD64 ABI document for a description of how this should act
+                if !inner.check_space(1, 0) {
+                    inner.get_overflow()
+                } else {
+                    inner.get_gp()
+                }
+            }
+        }
+        impl VaPrimitive for $s {
+            unsafe fn get(list: &mut VaList) -> Self {
+                mem::transmute(<$u>::get(list))
+            }
+        }
+    };
 }
 
 impl_va_prim!{ usize, isize }
