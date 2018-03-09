@@ -39,6 +39,13 @@ impl VaListInner
 		self.gp_offset += (8*n_gp) as u32;
 		rv
 	}
+	unsafe fn get_fp<T>(&mut self) -> T {
+		let n_fp = (mem::size_of::<T>()+15)/16;
+		assert!( self.check_space(0, n_fp as u32) );
+		let rv = ptr::read( (self.reg_save_area as usize + self.fp_offset as usize) as *const _ );
+		self.fp_offset += (16*n_fp) as u32;
+		rv
+	}
 	unsafe fn get_overflow<T>(&mut self) -> T {
 		let align = mem::align_of::<T>();
 		// 7. Align overflow_reg_area upwards to a 16-byte boundary if alignment
@@ -96,3 +103,15 @@ impl_va_prim!{ u32, i32 }
 //impl_va_prim!{ u16, i16 }
 //impl_va_prim!{ u8, i8 }
 
+impl VaPrimitive for f64 {
+	unsafe fn get(list: &mut VaList) -> Self {
+		let inner = list.inner();
+		// See the ELF AMD64 ABI document for a description of how this should act
+		if ! inner.check_space(0, 1) {
+			inner.get_overflow()
+		}
+		else {
+			inner.get_fp()
+		}
+	}
+}
