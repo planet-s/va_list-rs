@@ -42,7 +42,6 @@ fn trivial_values() {
 }
 
 #[test]
-#[cfg(not(all(target_arch = "x86_64", target_family = "unix")))] // TODO: Float on AMD64
 fn floating_point() {
     test_va_list!(
         4,
