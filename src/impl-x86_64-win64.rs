@@ -22,6 +22,11 @@ impl<T: 'static> VaPrimitive for *const T {
         <usize>::get(list) as *const T
     }
 }
+impl<T: 'static> VaPrimitive for *mut T {
+    unsafe fn get(list: &mut VaList) -> Self {
+        <usize>::get(list) as *mut T
+    }
+}
 impl VaPrimitive for usize {
     unsafe fn get(l: &mut VaList) -> Self {
         l.get_raw()
