@@ -42,6 +42,11 @@ impl<T: 'static> VaPrimitive for *const T {
         <usize>::get(list) as *const T
     }
 }
+impl<T: 'static> VaPrimitive for *mut T {
+    unsafe fn get(list: &mut VaList) -> Self {
+        <usize>::get(list) as *mut T
+    }
+}
 
 macro_rules! impl_va_prim_gr {
     ($u: ty, $s: ty) => {
